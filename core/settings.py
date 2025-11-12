@@ -159,6 +159,8 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = "users.NewUser"
 
-SIMPLE_JWT = {
-    "SIGNING_KEY": os.getenv("JWT_KEY"),
+KEYCLOAK_CONFIG = {
+    'URL': os.getenv("KEYCLOAK_URL"),
+    'REALM': os.getenv("KEYCLOAK_REALM"),
+    'CLIENT_ID': os.getenv("KEYCLOAK_CLIENT_ID"),
 }

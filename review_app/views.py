@@ -9,7 +9,7 @@ from rest_framework.permissions import (
 
 from .models import Book, Review
 from .serializers import BookSerializer, ReviewSerializer
-
+from .authentication import KeycloakAuthentication
 
 class BookPermission(BasePermission):
     message = "You have to be admin for this operation"
@@ -46,6 +46,7 @@ class ReviewPermission(BasePermission):
 class BookViewSet(viewsets.ModelViewSet):
     serializer_class = BookSerializer
     permission_classes = [BookPermission]
+    authentication_classes = [KeycloakAuthentication]
 
     def get_queryset(self):
         return Book.objects.all()
@@ -66,6 +67,7 @@ class BookViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [ReviewPermission]
+    authentication_classes = [KeycloakAuthentication]
 
     def get_queryset(self):
         return Review.objects.all()
