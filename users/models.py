@@ -9,6 +9,18 @@ from django.contrib.auth.models import Group
 
 
 class CustomAccountManager(BaseUserManager):
+    def create_user(self, email, keycloak_id=None, **other):
+        other.setdefault("is_active", True)
+        if not email:
+            raise ValueError("You must provide an email")
+
+        email = self.normalize_email(email)
+        user = self.model(email=email, keycloak_id=keycloak_id, **other)
+        user.set_unusable_password()
+
+        user.save()
+        return user
+
     def create_superuser(self, email, **other):
         other.setdefault("is_staff", True)
         other.setdefault("is_superuser", True)
@@ -20,21 +32,7 @@ class CustomAccountManager(BaseUserManager):
         if other.get("is_superuser") is not True:
             raise ValueError("Superuser must be is_superuser=True")
 
-        return self.create_user(email, **other)
-
-    def create_user(self, email, **other):
-        other.setdefault("is_active", True)
-        if not email:
-            raise ValueError("You must provide an email")
-
-        email = self.normalize_email(email)
-        user = self.model(email=email, **other)
-        user.save()
-
-        book_user_group, created = Group.objects.get_or_create(name="book_user")
-        user.groups.add(book_user_group)
-
-        return user
+        return self.create_user(email, keycloak_id=None, **other)
 
 
 class NewUser(AbstractBaseUser, PermissionsMixin):

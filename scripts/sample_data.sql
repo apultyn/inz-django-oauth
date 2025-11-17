@@ -1,3 +1,5 @@
+USE `django-oauth-db`;
+
 DELETE FROM review_app_book;
 
 DELETE FROM auth_group;
@@ -40,46 +42,50 @@ VALUES
     ('Miguel de Cervantes', 'Don Quixote');
 
 INSERT INTO
+    users_newuser (
+        email,
+        password,
+        is_superuser,
+        is_staff,
+        is_active,
+        keycloak_id
+    )
+VALUES
+    (
+        'apultyn@example.com',
+        '',
+        True,
+        True,
+        True,
+        '1b5b04e4-8400-4de9-86bb-4761f17cba77'
+    ),
+    (
+        'mpultyn@example.com',
+        '',
+        False,
+        False,
+        True,
+        'e5a71a7f-0a34-4d4f-b9f9-78aa024a0db9'
+    ),
+    (
+        'bpultyn@example.com',
+        '',
+        False,
+        False,
+        True,
+        '214e8b44-bcbb-4960-9e4e-75fb582fd514'
+    );
+
+INSERT INTO
     auth_group (name)
 VALUES
     ("book_admin"),
     ("book_user");
 
 INSERT INTO
-    users_newuser (
-        email,
-        password,
-        is_superuser,
-        is_staff,
-        is_active
-    )
-VALUES
-    (
-        'apultyn@example.com',
-        'pbkdf2_sha256$1000000$Kf7ZxRtVdVcOhBMwXcNWG2$2ULZetIhYzBlcO4kDHXpm2j8aq7X4xHwLvXp0fNzl1w=',
-        True,
-        True,
-        True
-    ),
-    (
-        'mpultyn@example.com',
-        'pbkdf2_sha256$1000000$Kf7ZxRtVdVcOhBMwXcNWG2$2ULZetIhYzBlcO4kDHXpm2j8aq7X4xHwLvXp0fNzl1w=',
-        False,
-        False,
-        True
-    ),
-    (
-        'bpultyn@example.com',
-        'pbkdf2_sha256$1000000$Kf7ZxRtVdVcOhBMwXcNWG2$2ULZetIhYzBlcO4kDHXpm2j8aq7X4xHwLvXp0fNzl1w=',
-        False,
-        False,
-        True
-    );
-
-INSERT INTO
     users_newuser_groups (newuser_id, group_id)
 VALUES
-    (3, 1),
+    (1, 1),
     (1, 2),
     (2, 2),
     (3, 2);

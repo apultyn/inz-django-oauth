@@ -10,7 +10,6 @@ router.register("books", BookViewSet, basename="book")
 router.register("reviews", ReviewViewSet, basename="review")
 
 urlpatterns = [
-    path("auth/", include("users.urls", namespace="users")),
 ]
 
 urlpatterns += router.urls
