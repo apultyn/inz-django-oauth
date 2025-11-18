@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("APP_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["django-jwt-be", "localhost", "127.0.0.1"]
 
@@ -65,13 +65,16 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-allowed_origins_str = os.getenv("CORS_ALLOWED_ORIGIN", "")
+allowed_origins_str = os.getenv("CORS_ALLOWED_ORIGINS", "")
+trusted_origins_str = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()
 ]
 
-print()
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip() for origin in trusted_origins_str.split(",") if origin.strip()
+]
 
 ROOT_URLCONF = "core.urls"
 
