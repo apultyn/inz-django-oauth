@@ -5,7 +5,6 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.utils.translation import gettext_lazy
-from django.contrib.auth.models import Group
 
 
 class CustomAccountManager(BaseUserManager):

@@ -48,8 +48,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -59,9 +59,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
@@ -122,7 +122,8 @@ if "test" in sys.argv or "test_coverage" in sys.argv:
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": "django.contrib.auth"
+        ".password_validation.UserAttributeSimilarityValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -170,7 +171,7 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = "users.NewUser"
 
 KEYCLOAK_CONFIG = {
-    'URL': os.getenv("KEYCLOAK_URL"),
-    'REALM': os.getenv("KEYCLOAK_REALM"),
-    'CLIENT_ID': os.getenv("KEYCLOAK_CLIENT_ID"),
+    "URL": os.getenv("KEYCLOAK_URL"),
+    "REALM": os.getenv("KEYCLOAK_REALM"),
+    "CLIENT_ID": os.getenv("KEYCLOAK_CLIENT_ID"),
 }

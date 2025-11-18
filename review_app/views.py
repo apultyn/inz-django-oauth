@@ -9,7 +9,7 @@ from rest_framework.permissions import (
 
 from .models import Book, Review
 from .serializers import BookSerializer, ReviewSerializer
-from .authentication import KeycloakAuthentication
+
 
 class BookPermission(IsAuthenticatedOrReadOnly):
     message = "You have to be admin for this operation"

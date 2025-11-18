@@ -9,32 +9,37 @@ from django.contrib.auth.models import Group
 
 User = get_user_model()
 
-def get_jwks_client():
-    kc_url = settings.KEYCLOAK_CONFIG['URL']
-    realm = settings.KEYCLOAK_CONFIG['REALM']
 
-    if kc_url.endswith('/'):
+def get_jwks_client():
+    kc_url = settings.KEYCLOAK_CONFIG["URL"]
+    realm = settings.KEYCLOAK_CONFIG["REALM"]
+
+    if kc_url.endswith("/"):
         kc_url = kc_url[:-1]
 
     jwks_url = f"{kc_url}/realms/{realm}/protocol/openid-connect/certs"
 
     return PyJWKClient(jwks_url)
 
+
 global_jwks_client = get_jwks_client()
+
 
 class KeycloakAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
-        auth_header = request.headers.get('Authorization')
+        auth_header = request.headers.get("Authorization")
 
         if not auth_header:
             return None
 
         try:
-            prefix, token = auth_header.split(' ')
-            if prefix.lower() != 'bearer':
-                raise AuthenticationFailed('Authorization header must start with Bearer')
+            prefix, token = auth_header.split(" ")
+            if prefix.lower() != "bearer":
+                raise AuthenticationFailed(
+                    "Authorization header must start with Bearer"
+                )
         except ValueError:
-            raise AuthenticationFailed('Invalid Authorization header format')
+            raise AuthenticationFailed("Invalid Authorization header format")
 
         payload = self._decode_token(token)
         user = self._get_or_create_user(payload)
@@ -52,31 +57,28 @@ class KeycloakAuthentication(authentication.BaseAuthentication):
             )
             return payload
         except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed('Token has expired')
+            raise AuthenticationFailed("Token has expired")
         except jwt.InvalidTokenError as e:
-            raise AuthenticationFailed(f'Invalid token: {str(e)}')
+            raise AuthenticationFailed(f"Invalid token: {str(e)}")
         except jwt.PyJWKClientError:
-            raise AuthenticationFailed('Key identification failed')
+            raise AuthenticationFailed("Key identification failed")
         except jwt.InvalidAudienceError:
-            raise AuthenticationFailed('Token audience mismatch')
+            raise AuthenticationFailed("Token audience mismatch")
 
     def _get_or_create_user(self, payload):
-        keycloak_id = payload.get('sub')
-        email = payload.get('email')
+        keycloak_id = payload.get("sub")
+        email = payload.get("email")
 
         if not keycloak_id or not email:
-            raise AuthenticationFailed('Token must contain sub and email claims')
+            raise AuthenticationFailed("Token must contain sub and email claims")
 
-        realm_access = payload.get('realm_access', {})
-        roles = realm_access.get('roles', [])
+        realm_access = payload.get("realm_access", {})
+        roles = realm_access.get("roles", [])
 
         try:
             user = User.objects.get(keycloak_id=keycloak_id)
         except User.DoesNotExist:
-            user = User.objects.create_user(
-                email=email,
-                keycloak_id=keycloak_id
-            )
+            user = User.objects.create_user(email=email, keycloak_id=keycloak_id)
 
         self._sync_permissions(user, roles)
 
@@ -85,6 +87,9 @@ class KeycloakAuthentication(authentication.BaseAuthentication):
     def _sync_permissions(self, user, roles):
         target_groups = []
         for role in roles:
+            if not role.lower().startswith("book_"):
+                continue
+
             group, _ = Group.objects.get_or_create(name=role.lower())
             target_groups.append(group)
         user.groups.set(target_groups)
