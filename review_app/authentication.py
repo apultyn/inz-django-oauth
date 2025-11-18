@@ -9,6 +9,19 @@ from django.contrib.auth.models import Group
 
 User = get_user_model()
 
+def get_jwks_client():
+    kc_url = settings.KEYCLOAK_CONFIG['URL']
+    realm = settings.KEYCLOAK_CONFIG['REALM']
+
+    if kc_url.endswith('/'):
+        kc_url = kc_url[:-1]
+
+    jwks_url = f"{kc_url}/realms/{realm}/protocol/openid-connect/certs"
+
+    return PyJWKClient(jwks_url)
+
+global_jwks_client = get_jwks_client()
+
 class KeycloakAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
         auth_header = request.headers.get('Authorization')
@@ -29,23 +42,23 @@ class KeycloakAuthentication(authentication.BaseAuthentication):
         return (user, None)
 
     def _decode_token(self, token):
-        url = f"{settings.KEYCLOAK_CONFIG['URL']}/realms/{settings.KEYCLOAK_CONFIG['REALM']}/protocol/openid-connect/certs"
-        jwks_client = PyJWKClient(url)
-
         try:
-            signing_key = jwks_client.get_signing_key_from_jwt(token)
+            signing_key = global_jwks_client.get_signing_key_from_jwt(token)
             payload = jwt.decode(
                 token,
                 signing_key.key,
                 algorithms=["RS256"],
                 audience="account",
-                options={"verify_aud": False}
             )
             return payload
         except jwt.ExpiredSignatureError:
             raise AuthenticationFailed('Token has expired')
         except jwt.InvalidTokenError as e:
             raise AuthenticationFailed(f'Invalid token: {str(e)}')
+        except jwt.PyJWKClientError:
+            raise AuthenticationFailed('Key identification failed')
+        except jwt.InvalidAudienceError:
+            raise AuthenticationFailed('Token audience mismatch')
 
     def _get_or_create_user(self, payload):
         keycloak_id = payload.get('sub')
@@ -59,9 +72,6 @@ class KeycloakAuthentication(authentication.BaseAuthentication):
 
         try:
             user = User.objects.get(keycloak_id=keycloak_id)
-            if user.email != email:
-                user.email = email
-                user.save()
         except User.DoesNotExist:
             user = User.objects.create_user(
                 email=email,
@@ -73,15 +83,8 @@ class KeycloakAuthentication(authentication.BaseAuthentication):
         return user
 
     def _sync_permissions(self, user, roles):
-        self._map_permissions("BOOK_ADMIN", roles, user)
-        self._map_permissions("BOOK_USER", roles, user)
-
-    def _map_permissions(self, role_name, roles, user):
-        if role_name in roles:
-            group, _ = Group.objects.get_or_create(name=role_name.lower())
-            if group not in user.groups.all():
-                user.groups.add(group)
-        else:
-            group = Group.objects.filter(name=role_name.lower()).first()
-            if group and group in user.groups.all():
-                user.groups.remove(group)
+        target_groups = []
+        for role in roles:
+            group, _ = Group.objects.get_or_create(name=role.lower())
+            target_groups.append(group)
+        user.groups.set(target_groups)

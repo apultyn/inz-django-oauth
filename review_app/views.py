@@ -3,7 +3,7 @@ from django.db import models
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import (
-    BasePermission,
+    IsAuthenticatedOrReadOnly,
     SAFE_METHODS,
 )
 
@@ -11,42 +11,36 @@ from .models import Book, Review
 from .serializers import BookSerializer, ReviewSerializer
 from .authentication import KeycloakAuthentication
 
-class BookPermission(BasePermission):
+class BookPermission(IsAuthenticatedOrReadOnly):
     message = "You have to be admin for this operation"
 
-    def has_permission(self, request, _):
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+
         if request.method in SAFE_METHODS:
             return True
-        return (
-            request.user
-            and request.user.is_authenticated
-            and request.user.groups.filter(name="book_admin").exists()
-        )
 
-    def has_object_permission(self, request, view, _):
-        return self.has_permission(request, view)
+        return request.user.groups.filter(name="book_admin").exists()
 
 
-class ReviewPermission(BasePermission):
-    def has_permission(self, request, _):
+class ReviewPermission(IsAuthenticatedOrReadOnly):
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+
         if request.method in SAFE_METHODS:
             return True
+
         if request.method == "POST":
-            return request.user.is_authenticated
-        return (
-            request.user
-            and request.user.is_authenticated
-            and request.user.groups.filter(name="book_admin").exists()
-        )
+            return request.user.groups.filter(name="book_user").exists()
 
-    def has_object_permission(self, request, view, _):
-        return self.has_permission(request, view)
+        return request.user.groups.filter(name="book_admin").exists()
 
 
 class BookViewSet(viewsets.ModelViewSet):
     serializer_class = BookSerializer
     permission_classes = [BookPermission]
-    authentication_classes = [KeycloakAuthentication]
 
     def get_queryset(self):
         return Book.objects.all()
@@ -67,7 +61,6 @@ class BookViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [ReviewPermission]
-    authentication_classes = [KeycloakAuthentication]
 
     def get_queryset(self):
         return Review.objects.all()
