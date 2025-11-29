@@ -3,7 +3,7 @@ from django.db import models
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import (
-    IsAuthenticatedOrReadOnly,
+    BasePermission,
     SAFE_METHODS,
 )
 
@@ -11,26 +11,26 @@ from .models import Book, Review
 from .serializers import BookSerializer, ReviewSerializer
 
 
-class BookPermission(IsAuthenticatedOrReadOnly):
+class BookPermission(BasePermission):
     message = "You have to be admin for this operation"
 
     def has_permission(self, request, view):
-        if not super().has_permission(request, view):
-            return False
-
         if request.method in SAFE_METHODS:
             return True
+
+        if not request.user or not request.user.is_authenticated:
+            return False
 
         return request.user.groups.filter(name="book_admin").exists()
 
 
-class ReviewPermission(IsAuthenticatedOrReadOnly):
+class ReviewPermission(BasePermission):
     def has_permission(self, request, view):
-        if not super().has_permission(request, view):
-            return False
-
         if request.method in SAFE_METHODS:
             return True
+
+        if not request.user or not request.user.is_authenticated:
+            return False
 
         if request.method == "POST":
             return request.user.groups.filter(name="book_user").exists()

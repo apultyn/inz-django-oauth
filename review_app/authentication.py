@@ -46,6 +46,9 @@ class KeycloakAuthentication(authentication.BaseAuthentication):
 
         return (user, None)
 
+    def authenticate_header(self, _):
+        return "Bearer"
+
     def _decode_token(self, token):
         try:
             signing_key = global_jwks_client.get_signing_key_from_jwt(token)

@@ -7,16 +7,27 @@ class ReviewSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source="author.email", read_only=True)
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
+    bookId = serializers.PrimaryKeyRelatedField(
+        source="book",
+        queryset=Book.objects.all(),
+        write_only=False,
+    )
+
     class Meta:
         model = Review
-        fields = ("id", "stars", "comment", "author", "book", "user_email")
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Review.objects.all(),
-                fields=["author", "book"],
-                message="You can write only one review per book",
-            )
-        ]
+        fields = ("id", "stars", "comment", "author", "bookId", "user_email")
+
+    def validate(self, attrs):
+        author = attrs.get("author")
+        book = attrs.get("book")
+
+        if self.instance is None:
+            if Review.objects.filter(author=author, book=book).exists():
+                raise serializers.ValidationError(
+                    {"bookId": "You can write only one review per book"}
+                )
+
+        return attrs
 
 
 class BookSerializer(serializers.ModelSerializer):
