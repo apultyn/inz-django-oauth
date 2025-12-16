@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("APP_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["django-jwt-be", "localhost", "127.0.0.1"]
 
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "users",
     "review_app",
     "rest_framework",
+    "mozilla_django_oidc",
     "corsheaders",
 ]
 
@@ -161,7 +162,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "review_app.authentication.KeycloakAuthentication"
+        "mozilla_django_oidc.contrib.drf.OIDCAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly"
@@ -170,8 +171,30 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = "users.NewUser"
 
-KEYCLOAK_CONFIG = {
-    "URL": os.getenv("KEYCLOAK_URL"),
-    "REALM": os.getenv("KEYCLOAK_REALM"),
-    "CLIENT_ID": os.getenv("KEYCLOAK_CLIENT_ID"),
-}
+
+KEYCLOAK_URL = os.getenv("KEYCLOAK_URL")
+KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM")
+
+OIDC_OP_JWKS_ENDPOINT = (
+    f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs"
+)
+OIDC_OP_AUTHORIZATION_ENDPOINT = (
+    f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/auth"
+)
+OIDC_OP_TOKEN_ENDPOINT = (
+    f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
+)
+OIDC_OP_USER_ENDPOINT = (
+    f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/userinfo"
+)
+
+OIDC_RP_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
+OIDC_RP_CLIENT_SECRET = ""
+
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_DRF_AUTH_BACKEND = "review_app.backends.CustomKeycloakBackend"
+
+AUTHENTICATION_BACKENDS = [
+    "review_app.backends.CustomKeycloakBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
